@@ -173,11 +173,20 @@ function render() {
       const card = document.createElement("div");
       card.className = "card";
 
-      card.innerHTML = `
-        <div class="token-name">${name}</div>
-        <div class="token-value">${token.$value}</div>
-        ${token.$value.startsWith("{") ? `<div class="alias">Alias → ${token.$value}</div>` : ""}
-      `;
+      const valueDisplay =
+  typeof token.$value === "object"
+    ? JSON.stringify(token.$value, null, 2)
+    : token.$value;
+
+card.innerHTML = `
+  <div class="token-name">${name}</div>
+  <div class="token-value">${valueDisplay}</div>
+  ${
+    typeof token.$value === "string" && token.$value.startsWith("{")
+      ? `<div class="alias">Alias → ${token.$value}</div>`
+      : ""
+  }
+`;
 
       grid.appendChild(card);
     }
