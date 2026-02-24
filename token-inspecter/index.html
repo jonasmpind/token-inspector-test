@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design Token Inspector</title>
+
+<style>
+body {
+  font-family: Inter, sans-serif;
+  padding: 24px;
+  background: #f9fafb;
+}
+
+h1 {
+  margin-bottom: 24px;
+}
+
+.controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+select, input {
+  padding: 8px;
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.token-name {
+  font-family: monospace;
+  font-size: 12px;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.token-value {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.alias {
+  font-size: 12px;
+  color: #6b7280;
+}
+</style>
+</head>
+<body>
+
+<h1>Design Token Inspector</h1>
+
+<div class="controls">
+  <select id="platformSelect"></select>
+
+  <select id="tierSelect" multiple size="3">
+    <option value="core">Core</option>
+    <option value="semantic">Semantic</option>
+    <option value="component">Component</option>
+  </select>
+
+  <input type="text" id="searchInput" placeholder="Search tokens..." />
+</div>
+
+<div class="grid" id="tokenGrid"></div>
+
+<script>
+const grid = document.getElementById("tokenGrid");
+const platformSelect = document.getElementById("platformSelect");
+const tierSelect = document.getElementById("tierSelect");
+const searchInput = document.getElementById("searchInput");
+
+let allTokens = {};
+
+async function init() {
+  const metadata = await fetch("tokens/$metadata.json").then(r => r.json());
+
+  const platforms = new Set();
+  const tierMap = {};
+
+  for (const entry of metadata.tokenSetOrder) {
+    const [platform, tierFile] = entry.split("/");
+    const tier = tierFile.replace("-web", "");
+
+    platforms.add(platform);
+
+    if (!tierMap[platform]) tierMap[platform] = [];
+    tierMap[platform].push(tierFile);
+  }
+
+  platformSelect.innerHTML = "";
+  platforms.forEach(p => {
+    const option = document.createElement("option");
+    option.value = p;
+    option.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+    platformSelect.appendChild(option);
+  });
+
+  for (const platform of platforms) {
+    allTokens[platform] = {};
+
+    const entries = metadata.tokenSetOrder.filter(e => e.startsWith(platform));
+
+    for (const entry of entries) {
+      const res = await fetch(`tokens/${entry}.json`);
+      const json = await res.json();
+      allTokens[platform][entry.split("/")[1]] = flattenTokens(json);
+    }
+  }
+
+  render();
+}
+
+function flattenTokens(obj, prefix = "") {
+  let result = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    const path = prefix ? `${prefix}.${key}` : key;
+
+    if (value && typeof value === "object" && "$value" in value) {
+      result[path] = value;
+    } else if (value && typeof value === "object") {
+      Object.assign(result, flattenTokens(value, path));
+    }
+  }
+
+  return result;
+}
+
+function render() {
+  grid.innerHTML = "";
+
+  const platform = platformSelect.value;
+  const selectedTiers = Array.from(tierSelect.selectedOptions).map(o => o.value);
+  const search = searchInput.value.toLowerCase();
+
+  if (!platform) return;
+
+  const tiers = allTokens[platform];
+
+  for (const tierFile in tiers) {
+    const tier = tierFile.replace("-web", "");
+
+    if (selectedTiers.length && !selectedTiers.includes(tier)) continue;
+
+    const tokens = tiers[tierFile];
+
+    for (const name in tokens) {
+      if (search && !name.toLowerCase().includes(search)) continue;
+
+      const token = tokens[name];
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="token-name">${name}</div>
+        <div class="token-value">${token.$value}</div>
+        ${token.$value.startsWith("{") ? `<div class="alias">Alias → ${token.$value}</div>` : ""}
+      `;
+
+      grid.appendChild(card);
+    }
+  }
+}
+
+platformSelect.addEventListener("change", render);
+tierSelect.addEventListener("change", render);
+searchInput.addEventListener("input", render);
+
+init();
+</script>
+
+</body>
+</html>
