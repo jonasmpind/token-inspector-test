@@ -232,3 +232,29 @@ label,
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   z-index: 100;
 }
+
+/* ==============================
+   Copy Tokens
+================================= */
+
+.copyable {
+        position: relative;
+        padding-right: 24px;
+        cursor: pointer;
+      }
+
+      .copy-btn {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        font-size: 12px;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+
+      .copyable:hover .copy-btn {
+        opacity: 1;
+      }

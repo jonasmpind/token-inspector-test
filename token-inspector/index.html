@@ -195,23 +195,34 @@
             const aliasChain = resolved.chain;
 
             card.innerHTML = `
-              <div class="token-name">${name}</div>
+              <div class="token-name copyable" data-copy="${name}">
+                ${name}
+                <button class="copy-btn">⧉</button>
+              </div>
               ${
                 isAlias
                   ? aliasChain
                       .map((a, index) => {
-                        if (index === 0) {
-                          return `<div class="token-alias level-1">→ {${a}}</div>`;
-                        }
-                        if (index === 1) {
-                          return `<div class="token-alias level-2">→ {${a}}</div>`;
-                        }
-                        return `<div class="token-alias level-3plus">→ {${a}}</div>`;
+                        const levelClass =
+                          index === 0
+                            ? "level-1"
+                            : index === 1
+                              ? "level-2"
+                              : "level-3plus";
+                        return `
+                          <div class="token-alias ${levelClass} copyable" data-copy="{${a}}">
+                            → {${a}}
+                            <button class="copy-btn">⧉</button>
+                          </div>
+                        `;
                       })
                       .join("")
                   : ""
               }
-              <div class="token-value">${resolvedValue}</div>
+              <div class="token-value copyable" data-copy="${resolvedValue}">
+                ${resolvedValue}
+                <button class="copy-btn">⧉</button>
+              </div>
             `;
 
             grid.appendChild(card);
@@ -232,6 +243,25 @@
       platformSelect.addEventListener("change", render);
       tierSelect.addEventListener("change", render);
       searchInput.addEventListener("input", render);
+
+      grid.addEventListener("click", async (e) => {
+        const button = e.target.closest(".copy-btn");
+        if (!button) return;
+
+        e.stopPropagation();
+
+        const container = button.closest(".copyable");
+        if (!container) return;
+
+        const text = container.getAttribute("data-copy");
+        if (!text) return;
+
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (err) {
+          console.error("Copy failed", err);
+        }
+      });
 
       init();
     </script>
