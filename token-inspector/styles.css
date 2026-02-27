@@ -19,6 +19,8 @@
   --text-subtle: hsl(221, 0%, 35%);
   --text-muted: hsl(220, 0%, 45%);
   --text-placeholder: hsl(220, 0%, 45%);
+  --text-tokenAlias: hsl(242, 38%, 58%);
+  --text-tokenResolvedValue: hsl(350, 45%, 48%);
 
   --radius-xs: 4px;
   --radius-sm: 8px;
@@ -97,6 +99,7 @@ label,
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-3);
+  align-items: start;
 }
 
 /* ==============================
@@ -157,18 +160,19 @@ label,
   background: var(--bg-surface-1);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: var(--space-3);
+  padding: var(--space-2);
   transition: border-color var(--transition-fast);
+  height: fit-content;
 }
 
 .token-name,
-.token-value,
-.token-alias {
+.token-alias,
+.token-value {
   font-family: var(--fontFamily-mono);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--text-default);
-  margin-bottom: var(--space-1);
+  margin-bottom: 4px);
   word-break: break-all;
 }
 
@@ -176,14 +180,32 @@ label,
   font-family: var(--fontFamily-sans);
   color: var(--text-default);
   font-weight: 500;
-}
-
-.token-value {
-  color: var(--text-muted);
+  margin-bottom: var(--space-1);
 }
 
 .token-alias {
-  color: var(--text-subtle);
+  color: var(--text-tokenAlias);
+}
+
+.token-alias.level-1 {
+  font-size: 13px;
+  padding-left: 4px;
+}
+.token-alias.level-2 {
+  font-size: 11px;
+  padding-left: 8px;
+}
+.token-alias.level-3plus {
+  font-size: 11px;
+  padding-left: 12px;
+  /* opacity: 0.8; */
+}
+
+.token-value {
+  font-size: 12px;
+  color: var(--text-tokenResolvedValue);
+  margin-top: 4px;
+  margin-bottom: 0;
 }
 
 /* ==============================

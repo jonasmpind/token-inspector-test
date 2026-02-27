@@ -16,7 +16,6 @@
         <label for="platformSelect">Platform:</label>
         <select id="platformSelect"></select>
       </div>
-      <div></div>
       <div class="col">
         <label for="tierSelect">Tier:</label>
         <select id="tierSelect">
@@ -199,22 +198,17 @@
               <div class="token-name">${name}</div>
               ${
                 isAlias
-                  ? `
-                    <div class="token-alias">
-                      → {${aliasChain[0]}}
-                    </div>
-                    ${
-                      aliasChain.length > 1
-                        ? aliasChain
-                            .slice(1)
-                            .map(
-                              (a) =>
-                                `<div class="token-alias secondary">→ {${a}}</div>`,
-                            )
-                            .join("")
-                        : ""
-                    }
-                  `
+                  ? aliasChain
+                      .map((a, index) => {
+                        if (index === 0) {
+                          return `<div class="token-alias level-1">→ {${a}}</div>`;
+                        }
+                        if (index === 1) {
+                          return `<div class="token-alias level-2">→ {${a}}</div>`;
+                        }
+                        return `<div class="token-alias level-3plus">→ {${a}}</div>`;
+                      })
+                      .join("")
                   : ""
               }
               <div class="token-value">${resolvedValue}</div>
