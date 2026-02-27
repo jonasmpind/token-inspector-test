@@ -106,34 +106,46 @@
         return result;
       }
 
-      function resolveTokenValue(tokenName, platform, visited = new Set()) {
+      function resolveTokenValue(
+        tokenName,
+        platform,
+        visited = new Set(),
+        chain = [],
+      ) {
         const tiers = allTokens[platform];
 
-        // Merge all tiers into one lookup map
+        // Merge tiers into single lookup
         const lookup = {};
         for (const tierFile in tiers) {
           Object.assign(lookup, tiers[tierFile]);
         }
 
         const token = lookup[tokenName];
-        if (!token) return undefined;
+        if (!token) return { value: undefined, chain };
 
         const value = token.$value;
 
         // Primitive value
-        if (typeof value !== "string") return value;
+        if (typeof value !== "string") {
+          return { value, chain };
+        }
 
-        // Not an alias
-        if (!value.startsWith("{")) return value;
+        // Not alias
+        if (!value.startsWith("{")) {
+          return { value, chain };
+        }
 
-        // Extract alias path
         const aliasPath = value.slice(1, -1);
 
-        // Prevent infinite loops
-        if (visited.has(aliasPath)) return value;
-        visited.add(aliasPath);
+        // Prevent infinite loop
+        if (visited.has(aliasPath)) {
+          return { value, chain };
+        }
 
-        return resolveTokenValue(aliasPath, platform, visited);
+        visited.add(aliasPath);
+        chain.push(aliasPath);
+
+        return resolveTokenValue(aliasPath, platform, visited, chain);
       }
 
       function render() {
@@ -171,16 +183,42 @@
             card.className = "card";
 
             const rawValue = token.$value;
-            const resolvedValue = resolveTokenValue(name, platform);
-
             const isAlias =
               typeof rawValue === "string" && rawValue.startsWith("{");
 
+            let resolved = { value: rawValue, chain: [] };
+
+            if (isAlias) {
+              resolved = resolveTokenValue(name, platform);
+            }
+
+            const resolvedValue = resolved.value;
+            const aliasChain = resolved.chain;
+
             card.innerHTML = `
               <div class="token-name">${name}</div>
-              ${isAlias ? `<div class="token-alias">→ ${rawValue}</div>` : ""}
+              ${
+                isAlias
+                  ? `
+                    <div class="token-alias">
+                      → {${aliasChain[0]}}
+                    </div>
+                    ${
+                      aliasChain.length > 1
+                        ? aliasChain
+                            .slice(1)
+                            .map(
+                              (a) =>
+                                `<div class="token-alias secondary">→ {${a}}</div>`,
+                            )
+                            .join("")
+                        : ""
+                    }
+                  `
+                  : ""
+              }
               <div class="token-value">${resolvedValue}</div>
-              `;
+            `;
 
             grid.appendChild(card);
           }
